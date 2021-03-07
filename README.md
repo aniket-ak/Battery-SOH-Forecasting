@@ -1,7 +1,5 @@
-===
 GPR
-===
-
+===========
 
 Battery SOH forecasting using GPR. Reference from this [paper](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjqmJ_855bvAhUVgOYKHR4lByAQFjAAegQIBBAD&url=https%3A%2F%2Fwww.sciencedirect.com%2Fscience%2Farticle%2Fpii%2FS0378775317306250&usg=AOvVaw1P31v8I4zlOJacXNwqw_xP).
 
