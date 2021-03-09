@@ -21,7 +21,7 @@ __license__ = "mit"
 _logger = logging.getLogger(__name__)
 
 
-class GPR():
+class GPR:
 
     def __init__(self, kernel, optimizer='L-BFGS-B', noise_var=1e-8):
         self.kernel = kernel
@@ -49,10 +49,10 @@ class GPR():
         pass
 
 
-def run():
-    """Entry point for console_scripts"""
-    main(sys.argv[1:])
-
-
-if __name__ == "__main__":
-    run()
+class Kernel:
+    def __init__(self, signal_variance=1.0, signal_variance_bounds=(1e-5, 1e5)):
+        self.theta = [signal_variance]
+        self.bounds = [signal_variance_bounds]
+    def __call__(self, x1, x2=None):
+        self.k = self.theta[0] * np.dot(x1, x1.T)
+        return self.k
