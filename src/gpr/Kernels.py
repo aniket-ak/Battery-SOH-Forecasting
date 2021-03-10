@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+"""
+This file contains various kernels for use of GPR
+"""
+
+__author__ = "Aniket"
+__copyright__ = "Aniket"
+__license__ = "mit"
+
 import numpy as np
 
 
