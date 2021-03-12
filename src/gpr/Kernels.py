@@ -8,6 +8,7 @@ __copyright__ = "Aniket"
 __license__ = "mit"
 
 import numpy as np
+from scipy.spatial.distance import cdist
 
 
 class BaseKernel:
@@ -23,14 +24,15 @@ class Linear(BaseKernel):
 
 class Matern1_5(BaseKernel):
     def __call__(self, x1, x2):
-        return (1 + np.sqrt(3) / self.length_scale) * np.exp(-np.sqrt(3) / self.length_scale * np.linalg.norm(x1 - x2))
+        return cdist(x1,x2, lambda xi, xj: (1 + np.sqrt(3) / self.length_scale) * np.exp(-np.sqrt(3) / self.length_scale * np.linalg.norm(x1 - x2)))
 
 
 class Matern2_5(BaseKernel):
     def __call__(self, x1, x2):
-        return (1 + np.sqrt(5) / self.length_scale * np.linalg.norm(x1 - x2) +
-                5 / (3 * self.length_scale) * np.linalg.norm(x1 - x2) * np.linalg.norm(x1 - x2)) * np.exp(
-            -np.sqrt(5) / self.length_scale * np.linalg.norm(x1 - x2))
+        return cdist(x1,x2, lambda xi, xj: ((1 +
+                 np.sqrt(5) / self.length_scale * np.linalg.norm(x1 - x2) +
+                 5 / (3 * self.length_scale) * np.linalg.norm(x1 - x2) * np.linalg.norm(x1 - x2)) *
+                np.exp(-np.sqrt(5) / self.length_scale * np.linalg.norm(x1 - x2))))
 
 
 class Periodic(BaseKernel):
@@ -40,10 +42,12 @@ class Periodic(BaseKernel):
         self.periodicity_bounds = periodicity_bounds
 
     def __call__(self, x1, x2):
-        return np.exp(-2 * np.sin(np.pi * np.linalg.norm(x1 - x2) / self.periodicity) * np.sin(
-            np.pi * np.linalg.norm(x1 - x2) / self.periodicity) / (self.length_scale ** 2))
+        return cdist(x1, x2,
+                     lambda xi, xj: np.exp(-2 * (np.sin(np.pi * np.linalg.norm(xi - xj) / self.periodicity).T*
+                                                       np.sin(np.pi * np.linalg.norm(xi - xj) / self.periodicity)) / (
+                                                       self.periodicity ** 2)))
 
 
 class SquaredExponential(BaseKernel):
     def __call__(self, x1, x2):
-        return np.exp(-(np.linalg.norm(x1 - x2) ** 2) / (2 * self.length_scale ** 2))
+        return cdist(x1, x2, lambda xi,xj: np.exp(-(np.linalg.norm(x1 - x2) ** 2) / (2 * self.length_scale ** 2)))

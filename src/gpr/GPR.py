@@ -21,13 +21,13 @@ class GPR:
     # 'Public' methods
     def sample_prior(self, X_test, n_samples=1):
         y_mean = np.zeros(X_test.shape[0])
-        y_cov = self.kernel(X_test)
+        y_cov = self.kernel(X_test, X_test)
         return self._sample_multivariate_gaussian(y_mean, y_cov, n_samples)
 
     def sample_posterior(self, X_train, y_train, X_test, n_samples=1):
 
         # compute alpha
-        K = self.kernel(X_train)
+        K = self.kernel(X_train, X_train)
         K[np.diag_indices_from(K)] += self.noise_var
         L = self._cholesky_factorise(K)
         alpha = np.linalg.solve(L.T, np.linalg.solve(L, y_train))
@@ -38,7 +38,7 @@ class GPR:
 
         # Compute posterior covariance
         v = np.linalg.solve(L, K_trans.T)  # L.T * K_inv * K_trans.T
-        y_cov = self.kernel(X_test) - np.dot(v.T, v)
+        y_cov = self.kernel(X_test, X_test) - np.dot(v.T, v)
 
         return self._sample_multivariate_gaussian(y_mean, y_cov, n_samples), y_mean, y_cov
 
