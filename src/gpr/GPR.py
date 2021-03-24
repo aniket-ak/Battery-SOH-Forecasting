@@ -13,7 +13,7 @@ __license__ = "mit"
 
 class GPR:
 
-    def __init__(self, kernel, optimizer='L-BFGS-B', noise_var=1e-8):
+    def __init__(self, kernel, optimizer='L-BFGS-B', noise_var=1e-5):
         self.kernel = kernel
         self.noise_var = noise_var
         self.optimizer = optimizer
@@ -42,17 +42,17 @@ class GPR:
 
         return self._sample_multivariate_gaussian(y_mean, y_cov, n_samples), y_mean, y_cov
 
-    def log_marginal_likelihood(self, X_train, y_train, theta, noise_var=None):
+    def log_marginal_likelihood(self, X_train, y_train, length_scale, noise_var=None):
 
         if noise_var is None:
             noise_var = self.noise_var
 
         # Build K(X, X)
-        self.kernel.theta = theta
-        K = self.kernel(X_train)
+        self.kernel.length_scale = length_scale
+        K = self.kernel(X_train, X_train)
         K[np.diag_indices_from(K)] += noise_var
 
-        # Compute L and alpha for this K (theta).
+        # Compute L and alpha for this K (length_scale).
         L = self._cholesky_factorise(K)
         alpha = np.linalg.solve(L.T, np.linalg.solve(L, y_train))
 
@@ -65,19 +65,19 @@ class GPR:
 
     def optimize(self, X_train, y_train):
 
-        def obj_func(theta, X_train, y_train):
-            return -self.log_marginal_likelihood(X_train, y_train, theta)
+        def obj_func(length_scale, X_train, y_train):
+            return -self.log_marginal_likelihood(X_train, y_train, length_scale)
 
         results = minimize(obj_func,
-                           self.kernel.theta,
+                           x0=self.kernel.length_scale,
                            args=(X_train, y_train),
                            method=self.optimizer,
                            jac=None,
-                           bounds=self.kernel.bounds)
+                           bounds=[self.kernel.length_scale_bounds])
 
         # Store results of optimization.
         self.max_log_marginal_likelihood_value = -results['fun']
-        self.kernel.theta_MAP = results['x']
+        self.kernel.length_scale_MAP = results['x']
 
         return results['success']
 

@@ -24,15 +24,15 @@ class Linear(BaseKernel):
 
 class Matern1_5(BaseKernel):
     def __call__(self, x1, x2):
-        return cdist(x1,x2, lambda xi, xj: (1 + np.sqrt(3) / self.length_scale) * np.exp(-np.sqrt(3) / self.length_scale * np.linalg.norm(x1 - x2)))
+        return cdist(x1,x2, lambda xi, xj: (1 + np.sqrt(3) / self.length_scale) * np.exp(-np.sqrt(3) / self.length_scale * np.linalg.norm(xi - xj)))
 
 
 class Matern2_5(BaseKernel):
     def __call__(self, x1, x2):
         return cdist(x1,x2, lambda xi, xj: ((1 +
-                 np.sqrt(5) / self.length_scale * np.linalg.norm(x1 - x2) +
-                 5 / (3 * self.length_scale) * np.linalg.norm(x1 - x2) * np.linalg.norm(x1 - x2)) *
-                np.exp(-np.sqrt(5) / self.length_scale * np.linalg.norm(x1 - x2))))
+                 np.sqrt(5) / self.length_scale * np.linalg.norm(xi - xj) +
+                 5 / (3 * self.length_scale) * np.linalg.norm(xi - xj) * np.linalg.norm(xi - xj)) *
+                np.exp(-np.sqrt(5) / self.length_scale * np.linalg.norm(xi - xj))))
 
 
 class Periodic(BaseKernel):
