@@ -9,6 +9,7 @@ __license__ = "mit"
 
 import numpy as np
 from scipy.spatial.distance import cdist
+import math
 
 
 class BaseKernel:
@@ -33,8 +34,9 @@ class Matern1_5(BaseKernel):
 class Matern2_5(BaseKernel):
     def __call__(self, x1, x2):
         dists = cdist(x1/ self.length_scale, x2/ self.length_scale, metric='euclidean')
-        K = dists * np.sqrt(5)
+        K = dists * math.sqrt(5)
         K = (1. + K + K ** 2 / 3.0) * np.exp(-K)
+        np.savetxt("k_from_custom.csv", K, delimiter=',')
         return K
 
 

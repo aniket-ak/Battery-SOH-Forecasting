@@ -45,7 +45,7 @@ class GPR:
         y_var -= np.einsum("ij,ij->i",
                            np.dot(K_trans, K_inv), K_trans)
 
-        return y_mean, y_var
+        return y_mean, np.sqrt(y_var)
 
     def log_marginal_likelihood(self, X_train, y_train, length_scale):
         # Build K(X, X)
@@ -57,10 +57,10 @@ class GPR:
         L = self._cholesky_factorise(K)
         alpha = cho_solve((L, True), y_train)
 
-        # Compute log marginal likelihood.
-        log_likelihood = -0.5 * np.dot(y_train.T, alpha)
-        log_likelihood -= np.log(np.diag(L)).sum()
-        log_likelihood -= K.shape[0] / 2 * np.log(2 * np.pi)
+        log_likelihood_dims = -0.5 * np.einsum("ik,ik->k", y_train, alpha)
+        log_likelihood_dims -= np.log(np.diag(L)).sum()
+        log_likelihood_dims -= K.shape[0] / 2 * np.log(2 * np.pi)
+        log_likelihood = log_likelihood_dims.sum(-1)  # sum over dimensions
 
         return log_likelihood
 
@@ -77,8 +77,8 @@ class GPR:
                            bounds=[self.kernel.length_scale_bounds])
 
         # Store results of optimization.
-        self.max_log_marginal_likelihood_value = -results['fun']
-        self.kernel.length_scale_MAP = results['x']
+        self.max_log_marginal_likelihood_value = results['fun']
+        self.kernel.length_scale = results['x']
 
         return results['success']
 
