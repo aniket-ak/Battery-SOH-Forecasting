@@ -12,7 +12,7 @@ from scipy.spatial.distance import cdist
 
 
 class BaseKernel:
-    def __init__(self, length_scale=1.0, length_scale_bounds=(1e-1, 1e3)):
+    def __init__(self, length_scale=1.0, length_scale_bounds=(1e-1, 5e3)):
         self.length_scale = length_scale
         self.length_scale_bounds = length_scale_bounds
 
@@ -24,15 +24,18 @@ class Linear(BaseKernel):
 
 class Matern1_5(BaseKernel):
     def __call__(self, x1, x2):
-        return cdist(x1,x2, lambda xi, xj: (1 + np.sqrt(3) / self.length_scale) * np.exp(-np.sqrt(3) / self.length_scale * np.linalg.norm(xi - xj)))
+        dists = cdist(x1/ self.length_scale, x2/ self.length_scale, metric='euclidean')
+        K = dists * np.sqrt(3)
+        K = (1. + K) * np.exp(-K)
+        return K
 
 
 class Matern2_5(BaseKernel):
     def __call__(self, x1, x2):
-        return cdist(x1,x2, lambda xi, xj: ((1 +
-                 np.sqrt(5) / self.length_scale * np.linalg.norm(xi - xj) +
-                 5 / (3 * self.length_scale) * np.linalg.norm(xi - xj) * np.linalg.norm(xi - xj)) *
-                np.exp(-np.sqrt(5) / self.length_scale * np.linalg.norm(xi - xj))))
+        dists = cdist(x1/ self.length_scale, x2/ self.length_scale, metric='euclidean')
+        K = dists * np.sqrt(5)
+        K = (1. + K + K ** 2 / 3.0) * np.exp(-K)
+        return K
 
 
 class Periodic(BaseKernel):

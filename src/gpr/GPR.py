@@ -5,6 +5,7 @@ This file contains the GPR implementation
 
 import numpy as np
 from scipy.optimize import minimize
+from scipy.linalg import cholesky, cho_solve, solve_triangular
 
 __author__ = "Aniket"
 __copyright__ = "Aniket"
@@ -25,36 +26,36 @@ class GPR:
         return self._sample_multivariate_gaussian(y_mean, y_cov, n_samples)
 
     def sample_posterior(self, X_train, y_train, X_test, n_samples=1):
-
         # compute alpha
         K = self.kernel(X_train, X_train)
         K[np.diag_indices_from(K)] += self.noise_var
         L = self._cholesky_factorise(K)
-        alpha = np.linalg.solve(L.T, np.linalg.solve(L, y_train))
+        alpha = cho_solve((L, True), y_train)
 
         # Compute posterior mean
         K_trans = self.kernel(X_test, X_train)
         y_mean = K_trans.dot(alpha)
 
-        # Compute posterior covariance
-        v = np.linalg.solve(L, K_trans.T)  # L.T * K_inv * K_trans.T
-        y_cov = self.kernel(X_test, X_test) - np.dot(v.T, v)
+        # Compute posterior standard deviation
+        L_inv = solve_triangular(L.T,
+                                 np.eye(L.shape[0]))
+        K_inv = L_inv.dot(L_inv.T)
 
-        return self._sample_multivariate_gaussian(y_mean, y_cov, n_samples), y_mean, y_cov
+        y_var = self.kernel(X_test, X_test)[np.diag_indices_from(self.kernel(X_test, X_test))]
+        y_var -= np.einsum("ij,ij->i",
+                           np.dot(K_trans, K_inv), K_trans)
 
-    def log_marginal_likelihood(self, X_train, y_train, length_scale, noise_var=None):
+        return y_mean, y_var
 
-        if noise_var is None:
-            noise_var = self.noise_var
-
+    def log_marginal_likelihood(self, X_train, y_train, length_scale):
         # Build K(X, X)
         self.kernel.length_scale = length_scale
         K = self.kernel(X_train, X_train)
-        K[np.diag_indices_from(K)] += noise_var
+        K[np.diag_indices_from(K)] += self.noise_var
 
-        # Compute L and alpha for this K (length_scale).
+        # Compute L and alpha for this K (length_scale)
         L = self._cholesky_factorise(K)
-        alpha = np.linalg.solve(L.T, np.linalg.solve(L, y_train))
+        alpha = cho_solve((L, True), y_train)
 
         # Compute log marginal likelihood.
         log_likelihood = -0.5 * np.dot(y_train.T, alpha)
@@ -84,7 +85,9 @@ class GPR:
     # 'Private' helper methods
     def _cholesky_factorise(self, y_cov):
         try:
-            L = np.linalg.cholesky(y_cov)
+            #y_cov[np.diag_indices_from(y_cov)] += 1e-6
+            #print (np.linalg.eigvalsh(y_cov))
+            L = cholesky(y_cov, lower=True)
         except np.linalg.LinAlgError as e:
             e.args = ("The kernel, %s, is not returning a"
                       "positive definite matrix. Try increasing"
@@ -94,7 +97,7 @@ class GPR:
             raise
         return L
 
-    def _sample_multivariate_gaussian(self, y_mean, y_cov, n_samples=1, epsilon=1e-10):
+    def _sample_multivariate_gaussian(self, y_mean, y_cov, n_samples=1, epsilon=1e-5):
         y_cov[np.diag_indices_from(y_cov)] += epsilon  # for numerical stability
         L = self._cholesky_factorise(y_cov)
         u = np.random.randn(y_mean.shape[0], n_samples)
