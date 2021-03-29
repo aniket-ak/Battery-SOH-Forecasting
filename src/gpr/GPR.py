@@ -97,9 +97,12 @@ class GPR:
             raise
         return L
 
-    def _sample_multivariate_gaussian(self, y_mean, y_cov, n_samples=1, epsilon=1e-5):
+    def _sample_multivariate_gaussian(self, y_mean, y_cov, n_samples=1, epsilon=1e-6):
         y_cov[np.diag_indices_from(y_cov)] += epsilon  # for numerical stability
         L = self._cholesky_factorise(y_cov)
         u = np.random.randn(y_mean.shape[0], n_samples)
         z = np.dot(L, u) + y_mean[:, np.newaxis]
         return z
+
+    def kernel_sum(self, kernel_a, kernel_b, x1, x2):
+        return kernel_a(x1,x2) + kernel_b(x1,x2)

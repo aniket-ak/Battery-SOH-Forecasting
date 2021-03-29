@@ -36,7 +36,6 @@ class Matern2_5(BaseKernel):
         dists = cdist(x1/ self.length_scale, x2/ self.length_scale, metric='euclidean')
         K = dists * math.sqrt(5)
         K = (1. + K + K ** 2 / 3.0) * np.exp(-K)
-        np.savetxt("k_from_custom.csv", K, delimiter=',')
         return K
 
 
@@ -51,7 +50,6 @@ class Periodic(BaseKernel):
                      lambda xi, xj: np.exp(-2 * (np.sin(np.pi * np.linalg.norm(xi - xj) / self.periodicity).T*
                                                        np.sin(np.pi * np.linalg.norm(xi - xj) / self.periodicity)) / (
                                                        self.periodicity ** 2)))
-
 
 class SquaredExponential(BaseKernel):
     def __call__(self, x1, x2):
